@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.RadioButton
-import android.widget.RadioGroup
 import androidx.appcompat.app.AppCompatActivity
 import com.github.piasy.rxandroidaudio.StreamAudioPlayer
 import com.github.piasy.rxandroidaudio.StreamAudioRecorder
@@ -20,7 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var btnStart: Button
     private lateinit var btnStop: Button
-    private lateinit var micGroup: RadioGroup
+    private lateinit var radioDeviceMic: RadioButton
     private lateinit var radioBluetoothMic: RadioButton
 
     private lateinit var mStreamAudioRecorder: StreamAudioRecorder
@@ -35,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     private fun initUI() {
         btnStart = findViewById(R.id.btn_start)
         btnStop = findViewById(R.id.btn_stop)
-        micGroup = findViewById(R.id.group_mic_mode)
+        radioDeviceMic = findViewById(R.id.device_mic)
         radioBluetoothMic = findViewById(R.id.bluetooth_mic)
 
         btnStart.setOnClickListener {
@@ -49,7 +48,7 @@ class MainActivity : AppCompatActivity() {
             mStreamAudioPlayer.init()
             startPlayback()
 
-            changeUIState(false)
+            changeUIState(true)
         }
 
         btnStop.setOnClickListener {
@@ -62,14 +61,15 @@ class MainActivity : AppCompatActivity() {
 
             mStreamAudioPlayer.release()
 
-            changeUIState(true)
+            changeUIState(false)
         }
     }
 
     private fun changeUIState(start: Boolean) {
-        btnStart.isEnabled = start
-        btnStop.isEnabled = !start
-        micGroup.isEnabled = start
+        btnStart.isEnabled = !start
+        btnStop.isEnabled = start
+        radioDeviceMic.isEnabled = !start
+        radioBluetoothMic.isEnabled = !start
     }
 
 
