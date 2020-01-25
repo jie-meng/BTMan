@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.MediaRecorder
 import android.os.Bundle
@@ -18,7 +19,6 @@ import com.github.piasy.rxandroidaudio.StreamAudioPlayer
 import com.github.piasy.rxandroidaudio.StreamAudioRecorder
 import com.thoughtworks.btman.definitions.APP_TAG
 import com.thoughtworks.btman.utils.PermissionManager
-import java.io.IOException
 import kotlin.system.exitProcess
 
 
@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var radioBluetoothMic: RadioButton
 
     private lateinit var mStreamAudioRecorder: StreamAudioRecorder
-    private lateinit var mStreamAudioPlayer: StreamAudioPlayer
+    private lateinit var mStreamAudioPlayer: StreamAudioPlayerEx
 
     private val recordFileName =
         Environment.getExternalStorageDirectory().absolutePath + "/record.3gp"
@@ -78,8 +78,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopBluetooth() {
-        mediaRecorder.stop()
-        mediaRecorder.release()
+//        mediaRecorder.stop()
+//        mediaRecorder.release()
+
+        mStreamAudioPlayer.release()
+        mStreamAudioRecorder.stop()
 
         val manager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         if (manager.isBluetoothScoOn) {
@@ -100,22 +103,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startBluetooth(): Boolean {
-        try {
-            mediaRecorder = MediaRecorder()
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT)
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-            mediaRecorder.setOutputFile(recordFileName)
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-            mediaRecorder.prepare()
-        } catch (e: IOException) {
-            Toast.makeText(
-                this@MainActivity,
-                "mRecorder prepare failed",
-                Toast.LENGTH_SHORT
-            ).show()
-
-            return false
-        }
+//        try {
+//            mediaRecorder = MediaRecorder()
+//            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT)
+//            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+//            mediaRecorder.setOutputFile(recordFileName)
+//            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+//            mediaRecorder.prepare()
+//        } catch (e: IOException) {
+//            Toast.makeText(
+//                this@MainActivity,
+//                "mRecorder prepare failed",
+//                Toast.LENGTH_SHORT
+//            ).show()
+//
+//            return false
+//        }
 
         // start bluetooth mic
         val manager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -142,7 +145,10 @@ class MainActivity : AppCompatActivity() {
                     ).show()
                     manager.isBluetoothScoOn = true
 
-                    mediaRecorder.start()
+//                    mediaRecorder.start()
+
+                    mStreamAudioPlayer.init()
+                    startPlayback()
 
                     unregisterReceiver(this)
                 }
@@ -182,7 +188,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initialize() {
         mStreamAudioRecorder = StreamAudioRecorder.getInstance()
-        mStreamAudioPlayer = StreamAudioPlayer.getInstance()
+        mStreamAudioPlayer = StreamAudioPlayerEx.getInstance()
 
         initUI()
     }
@@ -197,14 +203,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startPlayback() {
-        mStreamAudioRecorder.start(object : StreamAudioRecorder.AudioDataCallback {
-            override fun onAudioData(data: ByteArray, size: Int) {
-                mStreamAudioPlayer.play(data, size)
-            }
+        mStreamAudioRecorder.start(StreamAudioRecorder.DEFAULT_SAMPLE_RATE,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            DEFAULT_BUFFER_SIZE,
+            object : StreamAudioRecorder.AudioDataCallback {
+                override fun onAudioData(data: ByteArray, size: Int) {
+                    mStreamAudioPlayer.play(data, size)
+                }
 
-            override fun onError() {
-                Log.e(APP_TAG, "Record fail")
-            }
-        })
+                override fun onError() {
+                    Log.e(APP_TAG, "Record fail")
+                }
+            })
     }
 }
